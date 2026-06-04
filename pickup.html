@@ -1,0 +1,460 @@
+```html
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DURIAN PICKUP</title>
+
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f5f5;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:600px;
+    margin:auto;
+}
+
+.card{
+    background:#fff;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:15px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+h2{
+    margin-top:0;
+}
+
+button{
+    width:100%;
+    padding:15px;
+    margin:5px 0;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.platformBtn{
+    background:#009688;
+    color:#fff;
+}
+
+.orderBtn{
+    background:#2196F3;
+    color:#fff;
+}
+
+.choiceBtn{
+    background:#FF9800;
+    color:#fff;
+}
+
+.confirmBtn{
+    background:#4CAF50;
+    color:#fff;
+}
+
+.locker{
+    display:inline-block;
+    padding:15px;
+    margin:5px;
+    background:#4CAF50;
+    color:#fff;
+    border-radius:10px;
+    font-size:20px;
+    min-width:60px;
+    text-align:center;
+}
+
+.hidden{
+    display:none;
+}
+
+.info{
+    margin:10px 0;
+    font-size:18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h2>🍈 DURIAN PICKUP</h2>
+
+<div id="platformSection">
+
+<button class="platformBtn"
+onclick="loadOrders('LINEMAN')">
+LINE MAN
+</button>
+
+<button class="platformBtn"
+onclick="loadOrders('GRAB')">
+GRAB
+</button>
+
+<button class="platformBtn"
+onclick="loadOrders('SHOPEE')">
+SHOPEE
+</button>
+
+</div>
+
+</div>
+
+<div id="orderSection"
+class="card hidden">
+
+<h2>เลือกออเดอร์</h2>
+
+<div id="orderList"></div>
+
+</div>
+
+<div id="verifySection"
+class="card hidden">
+
+<h2>ยืนยันตัวตน</h2>
+
+<div class="info">
+Order :
+<span id="orderNo"></span>
+</div>
+
+<div id="nameChoices"></div>
+
+<br>
+
+<div id="phoneChoices"></div>
+
+</div>
+
+<div id="lockerSection"
+class="card hidden">
+
+<h2>รับสินค้า</h2>
+
+<div id="lockerDisplay"></div>
+
+<br>
+
+<button
+class="confirmBtn"
+onclick="confirmPickup()">
+รับสินค้า
+</button>
+
+</div>
+
+<div id="successSection"
+class="card hidden">
+
+<h2>✅ รับสินค้าเรียบร้อย</h2>
+
+<div id="successText"></div>
+
+</div>
+
+</div>
+
+<script>
+
+const API_URL =
+"https://script.google.com/macros/s/AKfycbyK1YPdLDcjmUUXnWjUo_sCX0s2ZUR3WiExYplrH54RYrwdEL0RnjjebTovq9S8b2546w/exec";
+
+let currentOrder = null;
+
+let selectedName = "";
+let selectedPhone = "";
+
+function shuffle(arr){
+    return arr.sort(()=>Math.random()-0.5);
+}
+
+async function loadOrders(platform){
+
+    document
+    .getElementById("orderSection")
+    .classList.remove("hidden");
+
+    const res =
+    await fetch(
+        API_URL +
+        "?action=getOrders&platform=" +
+        platform
+    );
+
+    const data =
+    await res.json();
+
+    let html = "";
+
+    data.forEach(order=>{
+
+        html += `
+        <button
+        class="orderBtn"
+        onclick="selectOrder('${order.orderNo}')">
+
+        ${order.orderNo}
+        <br>
+        ${order.customer}
+
+        </button>
+        `;
+
+    });
+
+    document
+    .getElementById("orderList")
+    .innerHTML = html;
+
+}
+
+async function selectOrder(orderNo){
+
+    const res =
+    await fetch(
+        API_URL +
+        "?action=getOrder&orderNo=" +
+        orderNo
+    );
+
+    currentOrder =
+    await res.json();
+
+    document
+    .getElementById("verifySection")
+    .classList.remove("hidden");
+
+    document
+    .getElementById("orderNo")
+    .innerText =
+    currentOrder.orderNo;
+
+    createVerification();
+
+}
+
+function createVerification(){
+
+    selectedName = "";
+    selectedPhone = "";
+
+    const realName =
+    currentOrder.riderName || "ไรเดอร์";
+
+    const fakeNames = [
+
+        "สมชาย ใจดี",
+        "ธนพล บุญมี",
+        "วิชัย ทองสุข"
+
+    ];
+
+    fakeNames.push(realName);
+
+    const nameList =
+    shuffle(fakeNames);
+
+    let nameHtml =
+    "<h3>เลือกชื่อคนขับ</h3>";
+
+    nameList.forEach(name=>{
+
+        nameHtml += `
+        <button
+        class="choiceBtn"
+        onclick="selectName('${name}')">
+
+        ${name}
+
+        </button>
+        `;
+
+    });
+
+    document
+    .getElementById("nameChoices")
+    .innerHTML =
+    nameHtml;
+
+    const realPhone =
+    String(currentOrder.riderPhone)
+    .slice(-4);
+
+    const fakePhones = [
+
+        "1234",
+        "5678",
+        "9999"
+
+    ];
+
+    fakePhones.push(realPhone);
+
+    const phoneList =
+    shuffle(fakePhones);
+
+    let phoneHtml =
+    "<h3>เลือก 4 ตัวท้ายเบอร์โทร</h3>";
+
+    phoneList.forEach(phone=>{
+
+        phoneHtml += `
+        <button
+        class="choiceBtn"
+        onclick="selectPhone('${phone}')">
+
+        ${phone}
+
+        </button>
+        `;
+
+    });
+
+    document
+    .getElementById("phoneChoices")
+    .innerHTML =
+    phoneHtml;
+
+}
+
+function selectName(name){
+
+    selectedName = name;
+
+    checkVerification();
+
+}
+
+function selectPhone(phone){
+
+    selectedPhone = phone;
+
+    checkVerification();
+
+}
+
+function checkVerification(){
+
+    if(
+        !selectedName ||
+        !selectedPhone
+    ){
+        return;
+    }
+
+    const realPhone =
+    String(currentOrder.riderPhone)
+    .slice(-4);
+
+    if(
+        selectedName === currentOrder.riderName &&
+        selectedPhone === realPhone
+    ){
+
+        showLocker();
+
+    }
+    else{
+
+        alert("ข้อมูลไม่ถูกต้อง");
+
+    }
+
+}
+
+function showLocker(){
+
+    document
+    .getElementById("lockerSection")
+    .classList.remove("hidden");
+
+    const lockers =
+    String(currentOrder.locker)
+    .split(",");
+
+    let html =
+    "<h3>เปิด Locker</h3>";
+
+    lockers.forEach(locker=>{
+
+        html +=
+        `<div class="locker">
+            ${locker}
+         </div>`;
+
+    });
+
+    document
+    .getElementById("lockerDisplay")
+    .innerHTML =
+    html;
+
+}
+
+async function confirmPickup(){
+
+    const res =
+    await fetch(
+
+        API_URL +
+
+        "?action=confirmPickup" +
+
+        "&orderNo=" +
+        currentOrder.orderNo +
+
+        "&riderName=" +
+        encodeURIComponent(
+            currentOrder.riderName
+        )
+
+    );
+
+    const data =
+    await res.json();
+
+    document
+    .getElementById("successSection")
+    .classList.remove("hidden");
+
+    document
+    .getElementById("successText")
+    .innerHTML =
+
+    `
+    Order :
+    ${currentOrder.orderNo}
+
+    <br><br>
+
+    Locker :
+    ${data.locker}
+
+    <br><br>
+
+    รับสินค้าเรียบร้อย
+    `;
+
+}
+
+</script>
+
+</body>
+</html>
+```
