@@ -1,27 +1,65 @@
+```html
 <!DOCTYPE html>
-<html>
+<html lang="th">
 
 <head>
 <meta charset="UTF-8">
-<title>Delivery Order Intake</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Durian Locker - Admin</title>
 
 <style>
 
 body{
-  font-family: Arial;
-  max-width:700px;
-  margin:auto;
-  padding:20px;
+    font-family: Arial, sans-serif;
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
+
+h2{
+    text-align:center;
+}
+
+.section{
+    margin-bottom:20px;
 }
 
 textarea{
-  width:100%;
-  height:250px;
+    width:100%;
+    height:250px;
+    padding:10px;
+    box-sizing:border-box;
+}
+
+input[type=text]{
+    width:100%;
+    padding:10px;
+    box-sizing:border-box;
+}
+
+.locker-group label{
+    margin-right:15px;
 }
 
 button{
-  padding:10px;
-  margin:5px;
+    background:#28a745;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    cursor:pointer;
+    font-size:16px;
+    border-radius:5px;
+}
+
+button:disabled{
+    background:#999;
+    cursor:not-allowed;
+}
+
+#status{
+    margin-top:15px;
+    font-weight:bold;
 }
 
 </style>
@@ -30,62 +68,72 @@ button{
 
 <body>
 
-<h2>Delivery Order Intake</h2>
+<h2>Durian Locker Admin</h2>
+
+<div class="section">
 
 <h3>Platform</h3>
 
 <label>
-<input type="radio"
-name="platform"
-value="LINEMAN"
-checked>
+<input type="radio" name="platform" value="LINEMAN" checked>
 LINE MAN
 </label>
 
 <label>
-<input type="radio"
-name="platform"
-value="GRAB">
+<input type="radio" name="platform" value="GRAB">
 GRAB
 </label>
 
 <label>
-<input type="radio"
-name="platform"
-value="SHOPEE">
+<input type="radio" name="platform" value="SHOPEE">
 SHOPEE FOOD
 </label>
 
-<hr>
+</div>
+
+<div class="section">
 
 <h3>Order Text</h3>
 
-<textarea id="orderText"></textarea>
+<textarea
+id="orderText"
+placeholder="Paste Order Text Here">
+</textarea>
 
-<hr>
+</div>
+
+<div class="section">
 
 <h3>Rider Phone</h3>
 
 <input
 type="text"
 id="riderPhone"
-style="width:100%;padding:10px;">
+placeholder="0812345678">
 
-<hr>
+</div>
+
+<div class="section">
 
 <h3>Locker</h3>
 
-<label><input type="checkbox" value="1">1</label>
-<label><input type="checkbox" value="2">2</label>
-<label><input type="checkbox" value="3">3</label>
-<label><input type="checkbox" value="4">4</label>
-<label><input type="checkbox" value="5">5</label>
+<div class="locker-group">
 
-<br><br>
+<label><input type="checkbox" value="1"> Locker 1</label>
+<label><input type="checkbox" value="2"> Locker 2</label>
+<label><input type="checkbox" value="3"> Locker 3</label>
+<label><input type="checkbox" value="4"> Locker 4</label>
+<label><input type="checkbox" value="5"> Locker 5</label>
 
-<button onclick="saveData()">
+</div>
+
+</div>
+
+<button id="saveBtn" onclick="saveData()">
 Save Order
 </button>
+
+<div id="status"></div>
 
 <script>
 
@@ -94,44 +142,116 @@ const API_URL =
 
 async function saveData(){
 
-  const platform =
-  document.querySelector(
+    const btn =
+    document.getElementById("saveBtn");
+
+    btn.disabled = true;
+    btn.innerText = "Saving...";
+
+    const platform =
+    document.querySelector(
     'input[name="platform"]:checked'
-  ).value;
+    ).value;
 
-  const riderPhone =
-  document.getElementById(
+    const riderPhone =
+    document.getElementById(
     "riderPhone"
-  ).value;
+    ).value.trim();
 
-  const orderText =
-  document.getElementById(
+    const orderText =
+    document.getElementById(
     "orderText"
-  ).value;
+    ).value.trim();
 
-  const lockers =
-  [...document.querySelectorAll(
-    'input[type="checkbox"]:checked'
-  )].map(cb=>cb.value);
+    const lockers =
+    [...document.querySelectorAll(
+    '.locker-group input[type="checkbox"]:checked'
+    )].map(cb => cb.value);
 
-  const payload = {
-    platform,
-    riderPhone,
-    lockers,
-    orderText
-  };
+    if(orderText === ""){
 
-  const res = await fetch(
-    API_URL,
-    {
-      method:"POST",
-      body:JSON.stringify(payload)
+        alert("กรุณาวางข้อความออเดอร์");
+
+        btn.disabled = false;
+        btn.innerText = "Save Order";
+
+        return;
     }
-  );
 
-  const result = await res.json();
+    const payload = {
+        platform,
+        riderPhone,
+        lockers,
+        orderText
+    };
 
-  alert(result.status);
+    try{
+
+        const response = await fetch(
+        API_URL,
+        {
+            method:"POST",
+            body:JSON.stringify(payload)
+        });
+
+        const result =
+        await response.json();
+
+        if(result.status === "success"){
+
+            document.getElementById(
+            "status"
+            ).innerHTML =
+            "✅ บันทึกสำเร็จ";
+
+            resetForm();
+
+        }else{
+
+            document.getElementById(
+            "status"
+            ).innerHTML =
+            "❌ เกิดข้อผิดพลาด";
+
+        }
+
+    }catch(err){
+
+        document.getElementById(
+        "status"
+        ).innerHTML =
+        "❌ ไม่สามารถเชื่อมต่อระบบได้";
+
+        console.error(err);
+
+    }
+
+    btn.disabled = false;
+    btn.innerText = "Save Order";
+
+}
+
+function resetForm(){
+
+    document.getElementById(
+    "orderText"
+    ).value = "";
+
+    document.getElementById(
+    "riderPhone"
+    ).value = "";
+
+    document.querySelectorAll(
+    '.locker-group input[type="checkbox"]'
+    ).forEach(cb => cb.checked = false);
+
+    document.querySelector(
+    'input[value="LINEMAN"]'
+    ).checked = true;
+
+    document.getElementById(
+    "orderText"
+    ).focus();
 
 }
 
@@ -139,3 +259,4 @@ async function saveData(){
 
 </body>
 </html>
+```
